@@ -1,0 +1,157 @@
+// main.c – MiniPark: Asistente de aparcamiento con ultrasonidos
+//
+// Proyecto SCTR – Raspberry Pi Pico (C SDK)
+//
+// Función básica:
+//  - Mide la distancia con un HC-SR04.
+//  - Según la distancia, enciende leds (verde/amarillo/rojo).
+//  - A distancia crítica activa también el buzzer.
+//
+// NOTA HARDWARE IMPORTANTE:
+//  El pin ECHO del HC-SR04 suele ser de 5 V.
+//  Hay que usar un divisor resistivo / adaptador a 3,3 V para proteger la Pico.
+
+#include "pico/stdlib.h"
+#include "hardware/gpio.h"
+#include "hardware/timer.h"
+
+// ---------------------- CONFIGURACIÓN DE PINES ----------------------
+
+// modificar configuaraciones de los pines segun los conectemos 
+
+#define PIN_TRIG        2
+#define PIN_ECHO        3
+
+#define LED_VERDE       4
+#define LED_AMARILLO    5
+#define LED_ROJO        6
+
+#define PIN_BUZZER      7
+
+// ---------------------- UMBRALES DE DISTANCIA (en cm) ----------------------
+//
+// Ajusta estos valores según vuestro montaje real:
+#define DISTANCIA_SEGURA_CM       40.0f   // lejos -> LED verde  
+#define DISTANCIA_ADVERTENCIA_CM  20.0f   // media -> LED amarillo
+// <= 20 cm -> LED rojo + buzzer
+
+// Tiempo máximo de espera del eco (en microsegundos)
+#define ECO_TIMEOUT_US   30000   // 30 ms aprox → ~5 metros
+
+// ---------------------- FUNCIONES AUXILIARES ----------------------
+
+// Mide la distancia usando el HC-SR04 y devuelve centímetros.
+// Devuelve un valor negativo (<0) si hay timeout o error.
+float medir_distancia_cm(void) {
+    // Asegurarse de que TRIG está en bajo
+    gpio_put(PIN_TRIG, 0);
+    sleep_us(2);
+
+    // Pulso de disparo de 10 us
+    gpio_put(PIN_TRIG, 1);
+    sleep_us(10);
+    gpio_put(PIN_TRIG, 0);
+
+    // Esperar a que ECHO se ponga en alto (comienza el eco)
+    uint32_t start_wait = time_us_32();
+    while (gpio_get(PIN_ECHO) == 0) {
+        if (time_us_32() - start_wait > ECO_TIMEOUT_US) {
+            // No llegó eco -> error
+            return -1.0f;
+        }
+    }
+
+    // ECHO se ha puesto a 1 → registrar tiempo de inicio
+    uint32_t start_pulse = time_us_32();
+
+    // Esperar a que ECHO vuelva a 0 (fin del eco)
+    while (gpio_get(PIN_ECHO) == 1) {
+        if (time_us_32() - start_pulse > ECO_TIMEOUT_US) {
+            // Pulso demasiado largo -> error
+            return -1.0f;
+        }
+    }
+
+    uint32_t end_pulse = time_us_32();
+    uint32_t duracion_us = end_pulse - start_pulse;
+
+    // Conversión clásica: distancia [cm] ≈ duracion_us / 58.0
+    // (velocidad del sonido ~340 m/s, ida y vuelta)
+    float distancia_cm = (float)duracion_us / 58.0f;
+    return distancia_cm;
+}
+
+// Actualiza LEDs y buzzer según la distancia medida
+void actualizar_salidas(float distancia_cm) {
+    // Apagar todas las salidas inicialmente
+    gpio_put(LED_VERDE, 0);
+    gpio_put(LED_AMARILLO, 0);
+    gpio_put(LED_ROJO, 0);
+    gpio_put(PIN_BUZZER, 0);
+
+    // Si hay error de medida, podemos dejar todo apagado o encender solo rojo, etc.
+    if (distancia_cm < 0.0f) {
+        // Aquí se podría indicar error, pero de momento lo dejamos todo apagado.
+        return;
+    }
+
+    if (distancia_cm > DISTANCIA_SEGURA_CM) {
+        // Zona segura → LED verde
+        gpio_put(LED_VERDE, 1);
+    } else if (distancia_cm > DISTANCIA_ADVERTENCIA_CM) {
+        // Zona intermedia → LED amarillo
+        gpio_put(LED_AMARILLO, 1);
+    } else {
+        // Zona crítica → LED rojo + buzzer
+        gpio_put(LED_ROJO, 1);
+        gpio_put(PIN_BUZZER, 1);
+    }
+}
+
+// ---------------------- FUNCIÓN PRINCIPAL ----------------------
+
+int main() {
+    stdio_init_all();  // Para depuración por USB (opcional)
+
+    // Configurar GPIOs
+    gpio_init(PIN_TRIG);
+    gpio_set_dir(PIN_TRIG, GPIO_OUT);
+
+    gpio_init(PIN_ECHO);
+    gpio_set_dir(PIN_ECHO, GPIO_IN);
+
+    gpio_init(LED_VERDE);
+    gpio_set_dir(LED_VERDE, GPIO_OUT);
+
+    gpio_init(LED_AMARILLO);
+    gpio_set_dir(LED_AMARILLO, GPIO_OUT);
+
+    gpio_init(LED_ROJO);
+    gpio_set_dir(LED_ROJO, GPIO_OUT);
+
+    gpio_init(PIN_BUZZER);
+    gpio_set_dir(PIN_BUZZER, GPIO_OUT);
+
+    // Asegurar todo apagado al inicio
+    gpio_put(PIN_TRIG, 0);
+    gpio_put(LED_VERDE, 0);
+    gpio_put(LED_AMARILLO, 0);
+    gpio_put(LED_ROJO, 0);
+    gpio_put(PIN_BUZZER, 0);
+
+    while (true) {
+        float distancia = medir_distancia_cm();
+
+        // (Opcional) Imprimir por consola para depurar
+        // Solo funcionará si tenéis el USB stdio habilitado en el SDK.
+        printf("Distancia: %.2f cm\n", distancia);
+
+        actualizar_salidas(distancia);
+
+        // Pequeña pausa antes de la siguiente medida.
+        // Si queréis respuestas más rápidas, podéis bajar a 50 ms o menos.
+        sleep_ms(100);
+    }
+
+    return 0;
+}
