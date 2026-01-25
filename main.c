@@ -6,6 +6,7 @@
 // --- 1. CONFIGURACIÓN DE PINES ---
 const uint LED_1 = 15;     // Crítico (Rojo)
 const uint LED_2 = 14;     // Advertencia (Amarillo)
+const uint LED_3 = 13;     // Correcto (Verde)
 const uint BUZZER = 20;    // Zumbador (Lado derecho, Pin 26)
 const uint TRIG_PIN = 16;  // Sensor Trig
 const uint ECHO_PIN = 17;  // Sensor Echo
@@ -20,17 +21,17 @@ enum event { EV_NONE = 0, EV_LEJOS, EV_CERCA, EV_MUY_CERCA, EVENT_MAX };
 
 // --- ACCIONES DE LOS ESTADOS (Solo se ejecutan al entrar en el estado) ---
 void accion_seguro(void) {
-    gpio_put(LED_1, 0); gpio_put(LED_2, 0); gpio_put(BUZZER, 0);
+    gpio_put(LED_1, 0); gpio_put(LED_2, 0);gpio_put(LED_3, 1); gpio_put(BUZZER, 0);
     printf("\n[FSM] -> SEGURO\n");
 }
 
 void accion_advertencia(void) {
-    gpio_put(LED_1, 0); gpio_put(LED_2, 1); gpio_put(BUZZER, 0);
+    gpio_put(LED_1, 0); gpio_put(LED_2, 1);gpio_put(LED_3, 0); gpio_put(BUZZER, 0);
     printf("\n[FSM] -> ADVERTENCIA\n");
 }
 
 void accion_critico(void) {
-    gpio_put(LED_1, 1); gpio_put(LED_2, 0);
+    gpio_put(LED_1, 1); gpio_put(LED_2, 0);gpio_put(LED_3, 0);
     printf("\n[FSM] -> CRITICO - ¡PELIGRO!\n");
 }
 
@@ -103,7 +104,7 @@ int main() {
     stdio_init_all();
     
     // Inicialización de GPIOs
-    uint pins_out[] = {LED_1, LED_2, BUZZER, TRIG_PIN};
+    uint pins_out[] = {LED_1, LED_2,LED_3,BUZZER, TRIG_PIN};
     for(int i=0; i<4; i++) {
         gpio_init(pins_out[i]);
         gpio_set_dir(pins_out[i], GPIO_OUT);
@@ -138,4 +139,3 @@ int main() {
         sleep_ms(100); 
     }
 }
-// fin
