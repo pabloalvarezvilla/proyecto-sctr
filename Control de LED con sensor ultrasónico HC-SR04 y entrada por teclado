@@ -1,0 +1,65 @@
+#include <stdio.h>
+#include "pico/stdlib.h"
+#include "hardware/gpio.h"
+#include "hardware/timer.h"
+
+const uint LED_EXTERNO = 15;
+const uint TRIG_PIN = 16;
+const uint ECHO_PIN = 17;
+
+float medir_distancia() {
+    gpio_put(TRIG_PIN, 1);
+    sleep_us(10);
+    gpio_put(TRIG_PIN, 0);
+
+    // Esperar inicio de pulso con timeout de seguridad
+    uint32_t timeout = 0;
+    while (gpio_get(ECHO_PIN) == 0 && timeout < 20000) {
+        timeout++;
+        sleep_us(1);
+    }
+    absolute_time_t start = get_absolute_time();
+
+    // Esperar fin de pulso
+    while (gpio_get(ECHO_PIN) == 1) tight_loop_contents();
+    absolute_time_t end = get_absolute_time();
+
+    uint64_t duracion = absolute_time_diff_us(start, end);
+    return (duracion * 0.0343) / 2; // Distancia en cm
+}
+
+int main() {
+    stdio_init_all();
+
+    // Configuración de Pines
+    gpio_init(LED_EXTERNO);
+    gpio_set_dir(LED_EXTERNO, GPIO_OUT);
+    gpio_init(TRIG_PIN);
+    gpio_set_dir(TRIG_PIN, GPIO_OUT);
+    gpio_init(ECHO_PIN);
+    gpio_set_dir(ECHO_PIN, GPIO_IN);
+
+    sleep_ms(3000);
+    printf("--- PROYECTO SCTR: Sensor + Teclado ---\n");
+
+    while (true) {
+        // 1. Control Manual (Teclado)
+        int c = getchar_timeout_us(0);
+        if (c == '1') {
+            gpio_put(LED_EXTERNO, 1);
+            printf("Manual: LED ON\n");
+        } else if (c == '0') {
+            gpio_put(LED_EXTERNO, 0);
+            printf("Manual: LED OFF\n");
+        }
+
+        // 2. Control Automático (Proximidad)
+        float d = medir_distancia();
+        if (d > 0 && d < 15.0) { // Si detecta algo a menos de 15cm
+            gpio_put(LED_EXTERNO, 1);
+            printf("SCTR: Alerta! Objeto a %.2f cm\n", d);
+        }
+
+        sleep_ms(100); 
+    }
+}
