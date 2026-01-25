@@ -1,0 +1,21 @@
+## Descripción técnica del proyecto
+
+MiniPark es un sistema embebido de asistencia al aparcamiento implementado sobre una placa Raspberry Pi Pico, programada en lenguaje C utilizando el SDK oficial. 
+El sistema emplea un sensor de ultrasonidos HC-SR04 para medir la distancia hasta un obstáculo situado frente al sensor y, a partir de esa medida, genera avisos luminosos y sonoros en función del nivel de proximidad.
+
+La Raspberry Pi Pico controla el disparo del HC-SR04 mediante un pin de salida (TRIG) y mide la duración del pulso de eco recibido en un pin de entrada (ECHO). 
+A partir de la diferencia de tiempos entre el flanco de subida y el flanco de bajada del eco, el programa calcula el tiempo de vuelo del ultrasonido y lo convierte a distancia en centímetros.
+La función de medida incorpora un sistema de temporización con tiempo máximo de espera (timeout) tanto para el inicio del eco como para la duración del pulso, devolviendo un valor de error cuando no se obtiene una lectura válida.
+
+En el bucle principal, el sistema lee periódicamente la distancia y clasifica la situación en tres zonas de funcionamiento:
+
+- **Zona crítica**: distancia válida mayor que 0 cm y menor que 10 cm.  
+  Se activa el LED de alarma principal y el buzzer permanece encendido de forma continua, indicando una proximidad peligrosa. Además, se muestra por consola un mensaje de alerta con la distancia medida.
+
+- **Zona de advertencia**: distancia entre 10 cm y 15 cm (inclusive del límite inferior).  
+  Se enciende un LED de advertencia y el buzzer permanece apagado. Por consola se informa con un mensaje de “cuidado” y la distancia correspondiente.
+
+- **Zona segura / sin aviso**: para distancias iguales o superiores a 15 cm, o lecturas no válidas.  
+  Ambos LEDs permanecen apagados y el buzzer desactivado, indicando que no hay riesgo de colisión inmediato.
+
+El ciclo de medida y actualización de salidas se repite de forma periódica con un retardo fijo entre iteraciones, de modo que el usuario recibe una indicación continua y actualizada del nivel de proximidad al obstáculo.
