@@ -1,0 +1,48 @@
+DESCRIPCIÓN TÉCNICA DEL PROYECTO MINIPARK
+=======================================
+
+MiniPark es un sistema embebido de asistencia al aparcamiento implementado sobre una placa Raspberry Pi Pico y programado en lenguaje C utilizando el SDK oficial. 
+El sistema utiliza un sensor de ultrasonidos HC-SR04 para medir la distancia hasta un obstáculo y, en función de dicha distancia, activa diferentes combinaciones de LEDs y un zumbador para indicar el nivel de riesgo de colisión.
+
+La placa Raspberry Pi Pico controla el pin TRIG del HC-SR04 para generar el pulso de disparo y mide el tiempo de vuelo del eco a través del pin ECHO. La función medir_distancia() realiza esta secuencia de forma robusta, incorporando tiempos máximos de espera (timeouts) tanto para el inicio como para la duración del pulso. A partir de la diferencia de tiempos entre los instantes de subida y bajada del eco se calcula la distancia en centímetros, descartando medidas no válidas o demasiado pequeñas.
+
+Sobre la medida de distancia se define una lógica de control basada en una máquina de estados finita (FSM) table-driven. El sistema dispone de tres estados principales:
+
+- SEGURO: el obstáculo se encuentra lejos.
+- ADVERTENCIA: el obstáculo está a una distancia intermedia.
+- CRITICO: el obstáculo está muy cerca y existe riesgo de colisión.
+
+La función event_parser() traduce cada distancia en un evento lógico (EV_LEJOS, EV_CERCA, EV_MUY_CERCA), según unos umbrales fijos (10 cm y 15 cm). A partir del estado actual y del evento generado, el programa consulta una tabla de transición (trans_table), donde cada combinación estado–evento apunta a una función de transición concreta. Estas funciones ejecutan las acciones asociadas (encendido/apagado de LEDs y control del buzzer) y devuelven el nuevo estado de la FSM.
+
+El interfaz con el usuario se realiza mediante tres LEDs y un zumbador:
+
+- LED verde (LED_3) encendido en estado SEGURO.
+- LED amarillo (LED_2) encendido en estado ADVERTENCIA.
+- LED rojo (LED_1) encendido en estado CRITICO.
+- El buzzer (BUZZER) se activa de forma cíclica en estado CRITICO mediante la función trans_mantener_critico(), generando una alarma sonora intermitente.
+
+El bucle principal del programa realiza periódicamente la secuencia: medida de distancia -> generación de evento -> consulta de la tabla de transición -> ejecución de la acción correspondiente, manteniendo así una respuesta en tiempo real ante los cambios de proximidad al obstáculo.
+
+MATERIAL UTILIZADO
+------------------
+
+- Placa de control
+  - 1× Raspberry Pi Pico
+
+- Sensor
+  - 1× Sensor de ultrasonidos HC-SR04
+    - TRIG conectado al GPIO 16
+    - ECHO conectado al GPIO 17 (con adaptación a 3,3 V si es necesario)
+
+- Actuadores
+  - 1× LED rojo (indicación estado CRITICO) – GPIO 15
+  - 1× LED amarillo (indicación estado ADVERTENCIA) – GPIO 14
+  - 1× LED verde (indicación estado SEGURO) – GPIO 13
+  - 1× Buzzer 3,3 V (alarma sonora en estado CRITICO) – GPIO 20
+
+- Elementos auxiliares
+  - Resistencias limitadoras para cada LED
+  - Protoboard para el montaje del circuito
+  - Cables de conexión (jumpers macho–macho / macho–hembra)
+  - Cable micro-USB para alimentación y programación de la Raspberry Pi Pico
+  - Ordenador para compilación, carga del firmware y monitorización serie
