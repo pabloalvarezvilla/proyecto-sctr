@@ -37,7 +37,7 @@ MATERIAL UTILIZADO
 - Actuadores
   - 1× LED rojo (indicación estado CRITICO) – GPIO 15
   - 1× LED amarillo (indicación estado ADVERTENCIA) – GPIO 14
-  - 1× LED verde (indicación estado SEGURO) – GPIO 13
+  - 1× LED verde (indicación estado SEGURO) – GPIO 12
   - 1× Buzzer 3,3 V (alarma sonora en estado CRITICO) – GPIO 20
 
 - Elementos auxiliares
