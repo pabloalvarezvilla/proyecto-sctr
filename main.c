@@ -105,7 +105,7 @@ int main() {
     
     // Inicialización de GPIOs
     uint pins_out[] = {LED_1, LED_2,LED_3,BUZZER, TRIG_PIN};
-    for(int i=0; i<4; i++) {
+    for(int i=0; i<5; i++) {
         gpio_init(pins_out[i]);
         gpio_set_dir(pins_out[i], GPIO_OUT);
     }
