@@ -6,7 +6,7 @@
 // --- 1. CONFIGURACIÓN DE PINES ---
 const uint LED_1 = 15;     // Crítico (Rojo)
 const uint LED_2 = 14;     // Advertencia (Amarillo)
-const uint LED_3 = 13;     // Seguro (Verde)
+const uint LED_3 = 12;     // Seguro (Verde)
 const uint BUZZER = 20;    // Zumbador (Lado derecho, Pin 26)
 const uint TRIG_PIN = 16;  // Sensor Trig
 const uint ECHO_PIN = 17;  // Sensor Echo
