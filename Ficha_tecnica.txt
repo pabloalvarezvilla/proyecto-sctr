@@ -12,16 +12,17 @@ Sobre la medida de distancia se define una lógica de control basada en una máq
 - ADVERTENCIA: el obstáculo está a una distancia intermedia.
 - CRITICO: el obstáculo está muy cerca y existe riesgo de colisión.
 
-La función event_parser() traduce cada distancia en un evento lógico (EV_LEJOS, EV_CERCA, EV_MUY_CERCA), según unos umbrales fijos (10 cm y 15 cm). A partir del estado actual y del evento generado, el programa consulta una tabla de transición (trans_table), donde cada combinación estado–evento apunta a una función de transición concreta. Estas funciones ejecutan las acciones asociadas (encendido/apagado de LEDs y control del buzzer) y devuelven el nuevo estado de la FSM.
+La función event_parser() traduce cada distancia en un evento lógico (EV_LEJOS, EV_CERCA, EV_MUY_CERCA), según unos umbrales fijos (10 cm y 15 cm). A partir del estado actual y del evento generado, el programa consulta una tabla de transición (trans_table), donde cada combinación estado–evento apunta a una función de transición concreta. Estas funciones ejecutan las acciones asociadas sobre los LEDs y devuelven el nuevo estado de la FSM.
 
 El interfaz con el usuario se realiza mediante tres LEDs y un zumbador:
 
 - LED verde (LED_3) encendido en estado SEGURO.
-- LED amarillo (LED_2) encendido en estado ADVERTENCIA.
+- LED azul (LED_2) encendido en estado ADVERTENCIA.
 - LED rojo (LED_1) encendido en estado CRITICO.
-- El buzzer (BUZZER) se activa de forma cíclica en estado CRITICO mediante la función trans_mantener_critico(), generando una alarma sonora intermitente.
 
-El bucle principal del programa realiza periódicamente la secuencia: medida de distancia -> generación de evento -> consulta de la tabla de transición -> ejecución de la acción correspondiente, manteniendo así una respuesta en tiempo real ante los cambios de proximidad al obstáculo.
+Los LEDs se controlan exclusivamente desde la FSM table-driven, mientras que el comportamiento del zumbador se implementa de forma paralela a partir de la distancia medida. En la zona de advertencia (entre 10 cm y 15 cm) el zumbador emite un pitido periódico con una frecuencia fija, indicando que el obstáculo se encuentra relativamente cerca. En la zona crítica (menos de 10 cm) el sistema genera un patrón de pitido variable: el tiempo de espera entre pitidos se reduce a medida que disminuye la distancia, de forma que la señal sonora se vuelve más rápida y “urgente” cuanto más próximo está el obstáculo. Para distancias iguales o superiores a 15 cm, o lecturas no válidas, el zumbador permanece apagado.
+
+El bucle principal del programa realiza periódicamente la secuencia: medida de distancia -> generación de evento -> consulta de la tabla de transición -> ejecución de la acción correspondiente sobre los LEDs, además de actualizar el patrón de pitidos del zumbador en función de la zona de distancia. Esto permite mantener una respuesta en tiempo real ante los cambios de proximidad al obstáculo, tanto a nivel visual como sonoro.
 
 MATERIAL UTILIZADO
 ------------------
@@ -36,9 +37,9 @@ MATERIAL UTILIZADO
 
 - Actuadores
   - 1× LED rojo (indicación estado CRITICO) – GPIO 15
-  - 1× LED amarillo (indicación estado ADVERTENCIA) – GPIO 14
+  - 1× LED azul (indicación estado ADVERTENCIA) – GPIO 14
   - 1× LED verde (indicación estado SEGURO) – GPIO 12
-  - 1× Buzzer 3,3 V (alarma sonora en estado CRITICO) – GPIO 20
+  - 1× Buzzer 3,3 V (alarma sonora en zonas de ADVERTENCIA y CRITICO) – GPIO 20
 
 - Elementos auxiliares
   - Resistencias limitadoras para cada LED
@@ -46,3 +47,4 @@ MATERIAL UTILIZADO
   - Cables de conexión (jumpers macho–macho / macho–hembra)
   - Cable micro-USB para alimentación y programación de la Raspberry Pi Pico
   - Ordenador para compilación, carga del firmware y monitorización serie
+
