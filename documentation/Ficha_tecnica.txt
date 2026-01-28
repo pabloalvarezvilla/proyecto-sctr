@@ -4,7 +4,9 @@ DESCRIPCIÓN TÉCNICA DEL PROYECTO MINIPARK
 MiniPark es un sistema embebido de asistencia al aparcamiento implementado sobre una placa Raspberry Pi Pico y programado en lenguaje C utilizando el SDK oficial. 
 El sistema utiliza un sensor de ultrasonidos HC-SR04 para medir la distancia hasta un obstáculo y, en función de dicha distancia, activa diferentes combinaciones de LEDs y un zumbador para indicar el nivel de riesgo de colisión.
 
-La placa Raspberry Pi Pico controla el pin TRIG del HC-SR04 para generar el pulso de disparo y mide el tiempo de vuelo del eco a través del pin ECHO. La función medir_distancia() realiza esta secuencia de forma robusta, incorporando tiempos máximos de espera (timeouts) tanto para el inicio como para la duración del pulso. A partir de la diferencia de tiempos entre los instantes de subida y bajada del eco se calcula la distancia en centímetros, descartando medidas no válidas o demasiado pequeñas.
+La placa Raspberry Pi Pico controla el pin TRIG del HC-SR04 para generar el pulso de disparo y mide el tiempo de vuelo del eco a través del pin ECHO.
+La función medir_distancia() realiza esta secuencia de forma robusta, incorporando tiempos máximos de espera (timeouts) tanto para el inicio como para la duración del pulso. 
+A partir de la diferencia de tiempos entre los instantes de subida y bajada del eco se calcula la distancia en centímetros, descartando medidas no válidas o demasiado pequeñas.
 
 Sobre la medida de distancia se define una lógica de control basada en una máquina de estados finita (FSM) table-driven. El sistema dispone de tres estados principales:
 
@@ -12,7 +14,9 @@ Sobre la medida de distancia se define una lógica de control basada en una máq
 - ADVERTENCIA: el obstáculo está a una distancia intermedia.
 - CRITICO: el obstáculo está muy cerca y existe riesgo de colisión.
 
-La función event_parser() traduce cada distancia en un evento lógico (EV_LEJOS, EV_CERCA, EV_MUY_CERCA), según unos umbrales fijos (10 cm y 15 cm). A partir del estado actual y del evento generado, el programa consulta una tabla de transición (trans_table), donde cada combinación estado–evento apunta a una función de transición concreta. Estas funciones ejecutan las acciones asociadas sobre los LEDs y devuelven el nuevo estado de la FSM.
+La función event_parser() traduce cada distancia en un evento lógico (EV_LEJOS, EV_CERCA, EV_MUY_CERCA), según unos umbrales fijos (10 cm y 15 cm).
+A partir del estado actual y del evento generado, el programa consulta una tabla de transición (trans_table), donde cada combinación estado–evento apunta a una función de transición concreta. 
+Estas funciones ejecutan las acciones asociadas sobre los LEDs y devuelven el nuevo estado de la FSM.
 
 El interfaz con el usuario se realiza mediante tres LEDs y un zumbador:
 
@@ -20,7 +24,10 @@ El interfaz con el usuario se realiza mediante tres LEDs y un zumbador:
 - LED azul (LED_2) encendido en estado ADVERTENCIA.
 - LED rojo (LED_1) encendido en estado CRITICO.
 
-Los LEDs se controlan exclusivamente desde la FSM table-driven, mientras que el comportamiento del zumbador se implementa de forma paralela a partir de la distancia medida. En la zona de advertencia (entre 10 cm y 15 cm) el zumbador emite un pitido periódico con una frecuencia fija, indicando que el obstáculo se encuentra relativamente cerca. En la zona crítica (menos de 10 cm) el sistema genera un patrón de pitido variable: el tiempo de espera entre pitidos se reduce a medida que disminuye la distancia, de forma que la señal sonora se vuelve más rápida y “urgente” cuanto más próximo está el obstáculo. Para distancias iguales o superiores a 15 cm, o lecturas no válidas, el zumbador permanece apagado.
+Los LEDs se controlan exclusivamente desde la FSM table-driven, mientras que el comportamiento del zumbador se implementa de forma paralela a partir de la distancia medida.
+En la zona de advertencia (entre 10 cm y 15 cm) el zumbador emite un pitido periódico con una frecuencia fija, indicando que el obstáculo se encuentra relativamente cerca. 
+En la zona crítica (menos de 10 cm) el sistema genera un patrón de pitido variable: el tiempo de espera entre pitidos se reduce a medida que disminuye la distancia, de forma que la señal sonora se vuelve más rápida y “urgente” cuanto más próximo está el obstáculo.
+Para distancias iguales o superiores a 15 cm, o lecturas no válidas, el zumbador permanece apagado.
 
 El bucle principal del programa realiza periódicamente la secuencia: medida de distancia -> generación de evento -> consulta de la tabla de transición -> ejecución de la acción correspondiente sobre los LEDs, además de actualizar el patrón de pitidos del zumbador en función de la zona de distancia. Esto permite mantener una respuesta en tiempo real ante los cambios de proximidad al obstáculo, tanto a nivel visual como sonoro.
 
