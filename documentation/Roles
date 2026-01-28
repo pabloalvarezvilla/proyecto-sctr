@@ -1,0 +1,14 @@
+Reparto de roles y contribución al proyecto
+-------------------------------------------
+
+El trabajo se ha organizado de forma que cada integrante asumiese una responsabilidad principal, manteniendo en todo momento una colaboración conjunta, especialmente en la programación del código:
+
+- Branca Fernández Lago: responsable principal de la lógica de control y de la máquina de estados (FSM), así como de la integración de esta lógica con las lecturas del sensor y los actuadores.
+
+- Pablo Álvarez Villa: responsable de la documentación técnica del proyecto, incluyendo la redacción de la descripción técnica, el material utilizado y el soporte a la preparación de la ficha del proyecto.
+
+- Iago Dominguez Sousa: responsable del montaje físico del sistema en el laboratorio, cableado de la Raspberry Pi Pico con el sensor de ultrasonidos, los LEDs y el buzzer, y verificación práctica del funcionamiento.
+
+- Xian Fernandez Louzao: responsable del esquema eléctrico del circuito, reflejando de forma clara todas las conexiones de entradas y salidas, y de su coherencia con el código y el montaje.
+
+Aunque cada rol tiene un responsable principal, todos los integrantes del grupo han contribuido de manera activa en la programación del código, la realización de pruebas y la validación del comportamiento final del sistema.
